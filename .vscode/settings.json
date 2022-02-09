@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "*.docker-env": "ini",
+        "random": "cpp"
+    }
+}

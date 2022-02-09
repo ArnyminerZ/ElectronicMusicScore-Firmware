@@ -24,7 +24,7 @@
 /**
  * @brief The amount of time that will take a token to expire, in seconds.
  */
-#define SESSION_EXPIRATION_TIME_SECONDS 60 * 60
+#define SESSION_EXPIRATION_TIME_SECONDS 60 * 60 * 1000
 
 bool checkUserWebAuth(AsyncWebServerRequest *request)
 {
@@ -48,6 +48,10 @@ bool checkUserWebAuth(AsyncWebServerRequest *request)
     if (cookieValue.indexOf("SESSIONID=") != -1) // There's an stored session id
     {
       debugln("ok");
+
+      debug("  SESSIONID header: ");
+      String cookieHash = cookieValue.substring(cookieValue.indexOf("SESSIONID=") + 10);
+      debugln(cookieHash);
 
       // Get the user's date for expired session ids
       debug("  Cookie has SESSIONID. Getting browser User-Agent...");
@@ -81,7 +85,7 @@ bool checkUserWebAuth(AsyncWebServerRequest *request)
 
       // Get the amount of stored sessions
       debug("  Getting sessions count...");
-      unsigned int sessionsCount = preferences.getUInt(pref_sessionCount, 0U);
+      unsigned int sessionsCount = preferences.getUShort(pref_sessionCount, 0U);
       debugln("ok");
       debug("  - Sessions count: ");
       debugln(String(sessionsCount));
@@ -95,7 +99,7 @@ bool checkUserWebAuth(AsyncWebServerRequest *request)
         debug("...");
 
         // Get the stored session id on that index
-        String sessionId = preferences.getString((pref_sessionPrefix + String(c)).c_str());
+        String sessionId = preferences.getString((String(pref_sessionPrefix) + String(c)).c_str());
         debugln("ok");
         debug("    - Session id: ");
         debugln(sessionId);
@@ -109,7 +113,7 @@ bool checkUserWebAuth(AsyncWebServerRequest *request)
 
         // Check if the found sessionId matches the User Agent hash
         debug("    Checking if agent hash is correct...");
-        if (sessionId == agentHash) // Hash is correct
+        if (cookieHash == sessionId && cookieHash == agentHash) // Hash is correct
         {
           debugln("ok");
 
@@ -124,7 +128,7 @@ bool checkUserWebAuth(AsyncWebServerRequest *request)
           // Check if not expired
           debugln("      Checking if session has expired.");
           debug("      Getting session creation date...");
-          unsigned int sessionCreation = preferences.getUInt((pref_sessionExpPrefix + String(c)).c_str());
+          unsigned int sessionCreation = preferences.getULong((String(pref_sessionExpPrefix) + String(c)).c_str());
           debugln("ok");
 
           unsigned int difference = currentTime - sessionCreation;
@@ -146,7 +150,7 @@ bool checkUserWebAuth(AsyncWebServerRequest *request)
             sessionsCount--;
             debug(String(sessionsCount));
             debug("...");
-            preferences.putUInt(pref_sessionCount, sessionsCount);
+            preferences.putUShort(pref_sessionCount, sessionsCount);
             debugln("ok");
             // Move all remaining sessions one position to the left
             for (int i = c; i < sessionsCount; i++)
@@ -154,15 +158,15 @@ bool checkUserWebAuth(AsyncWebServerRequest *request)
               debug("        - Displacing session id at ");
               debug(String(i + 1));
               debug("...");
-              String oldSessionId = preferences.getString((pref_sessionPrefix + String(i + 1)).c_str());
-              preferences.putString((pref_sessionPrefix + String(i)).c_str(), oldSessionId);
+              String oldSessionId = preferences.getString((String(pref_sessionPrefix) + String(i + 1)).c_str());
+              preferences.putString((String(pref_sessionPrefix) + String(i)).c_str(), oldSessionId);
               debugln("ok");
 
               debug("        - Displacing session expiration at ");
               debug(String(i + 1));
               debug("...");
-              unsigned int sessionCreation = preferences.getUInt((pref_sessionExpPrefix + String(i + 1)).c_str());
-              preferences.putUInt((pref_sessionExpPrefix + String(i)).c_str(), sessionCreation);
+              unsigned int sessionCreation = preferences.getUInt((String(pref_sessionExpPrefix) + String(i + 1)).c_str());
+              preferences.putULong((String(pref_sessionExpPrefix) + String(i)).c_str(), sessionCreation);
               debugln("ok");
             }
             continue;

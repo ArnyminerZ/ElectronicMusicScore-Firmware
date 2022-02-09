@@ -24,11 +24,12 @@
  */
 String hash(const char *payload)
 {
-  const size_t payloadLength = strlen(payload);
-  byte shaResult[payloadLength];
+  byte shaResult[32];
 
   mbedtls_md_context_t ctx;
   mbedtls_md_type_t md_type = MBEDTLS_MD_SHA256;
+
+  const size_t payloadLength = strlen(payload);
 
   mbedtls_md_init(&ctx);
   mbedtls_md_setup(&ctx, mbedtls_md_info_from_type(md_type), 0);

@@ -4,6 +4,9 @@
 
 #define DEBUG_LEVEL DEBUG_LOG
 
+// Comment to disable debug mode
+#define DEBUG_MODE
+
 // External libraries
 #include <Arduino.h>
 #include <WiFi.h>
