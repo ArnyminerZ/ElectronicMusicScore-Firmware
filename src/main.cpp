@@ -1,48 +1,33 @@
+// External libraries
 #include <Arduino.h>
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <SPIFFS.h>
 #include <Preferences.h>
-#include "mbedtls/md.h"
-#include "webpages.h"
-#include "logger_levels.h"
 
+// Internal utilities files
+#include "webpages.h"
+#include "hash.h"
+
+// Constants files
+#include "logger_levels.h"
+#include "pref_consts.h"
+#include "consts_wifi.h"
+#include "consts_net.h"
+
+// General definitions
 #define FIRMWARE_VERSION "v0.0.1"
 
 #define DEBUG_LEVEL DEBUG_LOG
 
+// For logging messages into serial
 #include "logger.h"
 
 /**
  * @brief The amount of time that will take a token to expire, in seconds.
  */
 #define SESSION_EXPIRATION_TIME_SECONDS 60 * 60
-
-const String default_ssid = "DIGIFIBRA-dZSX";
-const String default_wifipassword = "t2SPCE7yHs";
-const String default_httpuser = "admin";
-const String default_httppassword = "admin";
-const int default_webserverporthttp = 80;
-
-/**
- * @author Arnau Mora
- * @since 20220208
- * @brief The name of the preferences storage.
- */
-const char *preferencesName = "elec-score";
-/**
- * @brief The preferences key for storing the amount of sessions stored.
- */
-const char *pref_sessionCount = "sess-count";
-/**
- * @brief The preferences key for storing the prefix for all the sessions.
- */
-const String pref_sessionPrefix = "sess-u";
-/**
- * @brief The preferences key for storing the prefix for all the sessions' creation date.
- */
-const String pref_sessionExpPrefix = "sess-e";
 
 /**
  * @brief The NTP server for getting the current time.
@@ -82,32 +67,6 @@ String humanReadableSize(const size_t bytes)
     return String(bytes / 1024.0 / 1024.0) + " MB";
   else
     return String(bytes / 1024.0 / 1024.0 / 1024.0) + " GB";
-}
-
-String hash(const char *payload)
-{
-  const size_t payloadLength = strlen(payload);
-  byte shaResult[payloadLength];
-
-  mbedtls_md_context_t ctx;
-  mbedtls_md_type_t md_type = MBEDTLS_MD_SHA256;
-
-  mbedtls_md_init(&ctx);
-  mbedtls_md_setup(&ctx, mbedtls_md_info_from_type(md_type), 0);
-  mbedtls_md_starts(&ctx);
-  mbedtls_md_update(&ctx, (const unsigned char *)payload, payloadLength);
-  mbedtls_md_finish(&ctx, shaResult);
-  mbedtls_md_free(&ctx);
-
-  String builder = "";
-  for (int i = 0; i < sizeof(shaResult); i++)
-  {
-    char str[3];
-    sprintf(str, "%02x", (int)shaResult[i]);
-    builder += str;
-  }
-
-  return builder;
 }
 
 /**
@@ -512,106 +471,112 @@ void configureWebServer()
                    logmessage += String(buffer);
                  }
                }
-               info(logmessage);
-             });
+               info(logmessage); });
 }
 
 void setup()
 {
   Serial.begin(115200);
 
-  Serial.print("Firmware: ");
-  Serial.println(FIRMWARE_VERSION);
+  info("Firmware: ");
+  infoln(FIRMWARE_VERSION);
 
-  Serial.println("Booting ...");
+  infoln("Booting ...");
 
-  Serial.println("Initializing preferences...");
+  info("Initializing preferences...");
   preferences.begin(preferencesName, false);
+  infoln("ok");
 
-  Serial.println("Mounting SPIFFS ...");
+  info("Mounting SPIFFS ...");
   if (!SPIFFS.begin(true))
   {
+    infoln("error!");
     // if you have not used SPIFFS before on a ESP32, it will show this error.
     // after a reboot SPIFFS will be configured and will happily work.
-    Serial.println("ERROR: Cannot mount SPIFFS, Rebooting");
+    errln("ERROR: Cannot mount SPIFFS, Rebooting");
     rebootESP("ERROR: Cannot mount SPIFFS, Rebooting");
+    return;
   }
+  infoln("ok");
 
-  Serial.print("SPIFFS Free: ");
-  Serial.println(humanReadableSize((SPIFFS.totalBytes() - SPIFFS.usedBytes())));
-  Serial.print("SPIFFS Used: ");
-  Serial.println(humanReadableSize(SPIFFS.usedBytes()));
-  Serial.print("SPIFFS Total: ");
-  Serial.println(humanReadableSize(SPIFFS.totalBytes()));
+  info("SPIFFS Free: ");
+  infoln(humanReadableSize((SPIFFS.totalBytes() - SPIFFS.usedBytes())));
+  info("SPIFFS Used: ");
+  infoln(humanReadableSize(SPIFFS.usedBytes()));
+  info("SPIFFS Total: ");
+  infoln(humanReadableSize(SPIFFS.totalBytes()));
 
-  Serial.println(listFiles());
+  infoln(listFiles());
 
-  Serial.println("Loading Configuration ...");
-  config.ssid = default_ssid;
-  config.wifipassword = default_wifipassword;
-  config.httpuser = default_httpuser;
-  config.httppassword = default_httppassword;
-  config.webserverporthttp = default_webserverporthttp;
+  infoln("Loading Configuration ...");
+  config.ssid = preferences.getString(pref_wifiSsid, WIFI_DEFAULT_SSID);
+  config.wifipassword = preferences.getString(pref_wifiPass, WIFI_DEFAULT_PASS);
+  config.httpuser = preferences.getString(pref_authUser, AUTH_DEFAULT_USER);
+  config.httppassword = preferences.getString(pref_authPass, AUTH_DEFAULT_PASS);
+  config.webserverporthttp = WEB_PORT;
 
-  Serial.print("\nConnecting to Wifi: ");
+  info("\nConnecting to Wifi (");
+  info(config.ssid);
+  info(")");
   WiFi.begin(config.ssid.c_str(), config.wifipassword.c_str());
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
-    Serial.print(".");
+    info(".");
   }
-  Serial.println("ok");
+  infoln("ok");
 
-  Serial.println("\nNetwork Configuration:");
-  Serial.println("----------------------");
-  Serial.print("         SSID: ");
-  Serial.println(WiFi.SSID());
-  Serial.print("  Wifi Status: ");
-  Serial.println(WiFi.status());
-  Serial.print("Wifi Strength: ");
-  Serial.print(WiFi.RSSI());
-  Serial.println(" dBm");
-  Serial.print("          MAC: ");
-  Serial.println(WiFi.macAddress());
-  Serial.print("           IP: ");
-  Serial.println(WiFi.localIP());
-  Serial.print("       Subnet: ");
-  Serial.println(WiFi.subnetMask());
-  Serial.print("      Gateway: ");
-  Serial.println(WiFi.gatewayIP());
-  Serial.print("        DNS 1: ");
-  Serial.println(WiFi.dnsIP(0));
-  Serial.print("        DNS 2: ");
-  Serial.println(WiFi.dnsIP(1));
-  Serial.print("        DNS 3: ");
-  Serial.println(WiFi.dnsIP(2));
-  Serial.println();
+  infoln("\nNetwork Configuration:");
+  infoln("----------------------");
+  info("         SSID: ");
+  infoln(WiFi.SSID());
+  info("  Wifi Status: ");
+  infoln(String(WiFi.status()));
+  info("Wifi Strength: ");
+  info(String(WiFi.RSSI()));
+  infoln(" dBm");
+  info("          MAC: ");
+  infoln(String(WiFi.macAddress()));
+  info("           IP: ");
+  infoln(String(WiFi.localIP()));
+  info("       Subnet: ");
+  infoln(String(WiFi.subnetMask()));
+  info("      Gateway: ");
+  infoln(String(WiFi.gatewayIP()));
+  info("        DNS 1: ");
+  infoln(String(WiFi.dnsIP(0)));
+  info("        DNS 2: ");
+  infoln(String(WiFi.dnsIP(1)));
+  info("        DNS 3: ");
+  infoln(String(WiFi.dnsIP(2)));
+  infoln(String());
 
   // Update time
-  // 3600 is for Spain timezone (+1h=3600s)
-  Serial.print("Configuring time...");
-  configTime(0, 3600, ntpServer);
-  Serial.println("ok");
+  // Defaults to 3600  for Spain timezone (+1h=3600s)
+  info("Configuring time...");
+  int daylightOffset = preferences.getInt(pref_timezone, 3600);
+  configTime(0, daylightOffset, ntpServer);
+  infoln("ok");
 
   // configure web server
-  Serial.print("Configuring Webserver ...");
+  info("Configuring Webserver ...");
   server = new AsyncWebServer(config.webserverporthttp);
   configureWebServer();
-  Serial.println("ok");
+  infoln("ok");
 
   // startup web server
-  Serial.print("Starting Webserver ...");
+  info("Starting Webserver ...");
   server->begin();
-  Serial.println("ok");
+  infoln("ok");
 }
 
 void loop()
 {
   // reboot if we've told it to reboot
   if (shouldReboot)
-  {
     rebootESP("Web Admin Initiated Reboot");
-  }
+
+  delay(10);
 }
 
 // list all of the files, if ishtml=true, return html rather than simple text
