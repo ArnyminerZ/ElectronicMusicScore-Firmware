@@ -9,6 +9,8 @@
 // Include utils file
 #include "logger.h"
 #include "auth.h"
+#include "utils.h"
+#include "filesystem.h"
 
 // Include webpages data
 #include "webpages.h"
@@ -23,6 +25,34 @@ void notFound(AsyncWebServerRequest *request)
   String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
   infoln(logmessage);
   request->send(404, "text/plain", "Not found");
+}
+
+// parses and processes webpages
+// if the webpage has %SOMETHING% or %SOMETHINGELSE% it will replace those strings with the ones defined
+/**
+ * @brief Gets some data according to [var].
+ *
+ * @param var The data to get. Can be:
+ * - FIRMWARE: Returns the Firmware version
+ * - FREESPIFFS: Returns the free SPIFFS memory
+ * - USEDSPIFFS: Returns the used SPIFFS memory
+ * - TOTALSPIFFS: Returns the total available SPIFFS memory
+ * @return String
+ */
+String processor(const String &var)
+{
+  String result = "N/A";
+
+  if (var == "FIRMWARE")
+    result = FIRMWARE_VERSION;
+  else if (var == "FREESPIFFS")
+    result = humanReadableSize((SPIFFS.totalBytes() - SPIFFS.usedBytes()));
+  else if (var == "USEDSPIFFS")
+    result = humanReadableSize(SPIFFS.usedBytes());
+  else if (var == "TOTALSPIFFS")
+    result = humanReadableSize(SPIFFS.totalBytes());
+
+  return result;
 }
 
 /**
@@ -77,7 +107,7 @@ void handleUpload(AsyncWebServerRequest *request, String filename, size_t index,
 /**
  * @brief Adds all the handlers for the server.
  */
-void configureWebServer(AsyncWebServer *server)
+void configureWebServer(AsyncWebServer *server, boolean* shouldReboot)
 {
   // configure web server
 
@@ -123,7 +153,7 @@ void configureWebServer(AsyncWebServer *server)
                  request->send_P(200, "text/html", login_html, processor);
                } });
 
-  server->on("/reboot", HTTP_GET, [](AsyncWebServerRequest *request)
+  server->on("/reboot", HTTP_GET, [shouldReboot](AsyncWebServerRequest *request)
              {
     String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
 
@@ -131,7 +161,7 @@ void configureWebServer(AsyncWebServer *server)
       request->send(200, "text/html", reboot_html);
       logmessage += " Auth: Success";
       info(logmessage);
-      shouldReboot = true;
+      *shouldReboot = true;
     } else {
       logmessage += " Auth: Failed";
       info(logmessage);

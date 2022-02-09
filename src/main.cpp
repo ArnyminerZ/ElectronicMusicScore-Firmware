@@ -1,3 +1,9 @@
+
+// General definitions
+#define FIRMWARE_VERSION "v0.0.1"
+
+#define DEBUG_LEVEL DEBUG_LOG
+
 // External libraries
 #include <Arduino.h>
 #include <WiFi.h>
@@ -9,17 +15,13 @@
 
 // Internal utilities files
 #include "hash.h"
+#include "filesystem.h"
 
 // Constants files
 #include "logger_levels.h"
 #include "pref_consts.h"
 #include "consts_wifi.h"
 #include "consts_net.h"
-
-// General definitions
-#define FIRMWARE_VERSION "v0.0.1"
-
-#define DEBUG_LEVEL DEBUG_LOG
 
 // For logging messages into serial
 #include "logger.h"
@@ -44,25 +46,8 @@ Config config;             // configuration
 bool shouldReboot = false; // schedule a reboot
 AsyncWebServer *server;    // initialise webserver
 unsigned long blockingRequestTime = 0;
-IPAddress apIP(8,8,4,4); // The default android DNS
+IPAddress apIP(8, 8, 4, 4); // The default android DNS
 DNSServer dnsServer;
-
-// function defaults
-String listFiles(bool ishtml = false);
-
-// Make size of files human readable
-// source: https://github.com/CelliesProjects/minimalUploadAuthESP32
-String humanReadableSize(const size_t bytes)
-{
-  if (bytes < 1024)
-    return String(bytes) + " B";
-  else if (bytes < (1024 * 1024))
-    return String(bytes / 1024.0) + " KB";
-  else if (bytes < (1024 * 1024 * 1024))
-    return String(bytes / 1024.0 / 1024.0) + " MB";
-  else
-    return String(bytes / 1024.0 / 1024.0 / 1024.0) + " GB";
-}
 
 /**
  * @brief Reboots the device.
@@ -74,34 +59,6 @@ void rebootESP(String message)
   warn("Rebooting ESP32: ");
   warnln(message);
   ESP.restart();
-}
-
-// parses and processes webpages
-// if the webpage has %SOMETHING% or %SOMETHINGELSE% it will replace those strings with the ones defined
-/**
- * @brief Gets some data according to [var].
- *
- * @param var The data to get. Can be:
- * - FIRMWARE: Returns the Firmware version
- * - FREESPIFFS: Returns the free SPIFFS memory
- * - USEDSPIFFS: Returns the used SPIFFS memory
- * - TOTALSPIFFS: Returns the total available SPIFFS memory
- * @return String
- */
-String processor(const String &var)
-{
-  String result = "N/A";
-
-  if (var == "FIRMWARE")
-    result = FIRMWARE_VERSION;
-  else if (var == "FREESPIFFS")
-    result = humanReadableSize((SPIFFS.totalBytes() - SPIFFS.usedBytes()));
-  else if (var == "USEDSPIFFS")
-    result = humanReadableSize(SPIFFS.usedBytes());
-  else if (var == "TOTALSPIFFS")
-    result = humanReadableSize(SPIFFS.totalBytes());
-
-  return result;
 }
 
 void setup()
@@ -175,19 +132,19 @@ void setup()
     info(String(WiFi.RSSI()));
     infoln(" dBm");
     info("          MAC: ");
-    infoln(String(WiFi.macAddress()));
+    infoln(WiFi.macAddress());
     info("           IP: ");
-    infoln(String(WiFi.localIP()));
+    infoln(WiFi.localIP());
     info("       Subnet: ");
-    infoln(String(WiFi.subnetMask()));
+    infoln(WiFi.subnetMask());
     info("      Gateway: ");
-    infoln(String(WiFi.gatewayIP()));
+    infoln(WiFi.gatewayIP());
     info("        DNS 1: ");
-    infoln(String(WiFi.dnsIP(0)));
+    infoln(WiFi.dnsIP(0));
     info("        DNS 2: ");
-    infoln(String(WiFi.dnsIP(1)));
+    infoln(WiFi.dnsIP(1));
     info("        DNS 3: ");
-    infoln(String(WiFi.dnsIP(2)));
+    infoln(WiFi.dnsIP(2));
     infoln(String());
   }
   else
@@ -199,7 +156,7 @@ void setup()
     WiFi.softAP("ESP32-DNSServer");
     WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
     infoln("ok");
-    
+
     info("Setting up DNS server...");
     dnsServer.start(DNS_PORT, "*", apIP);
     infoln("ok");
@@ -215,7 +172,7 @@ void setup()
   // configure web server
   info("Configuring Webserver ...");
   server = new AsyncWebServer(config.webserverporthttp);
-  configureWebServer(server);
+  configureWebServer(server, &shouldReboot);
   infoln("ok");
 
   // startup web server
@@ -230,41 +187,8 @@ void loop()
   if (shouldReboot)
     rebootESP("Web Admin Initiated Reboot");
 
-  dnsServer.processNextRequest();
+  if (WiFi.getMode() == WIFI_AP)
+    dnsServer.processNextRequest();
 
   delay(10);
-}
-
-// list all of the files, if ishtml=true, return html rather than simple text
-String listFiles(bool ishtml)
-{
-  String returnText = "";
-  Serial.println("Listing files stored on SPIFFS");
-  File root = SPIFFS.open("/");
-  File foundfile = root.openNextFile();
-  if (ishtml)
-  {
-    returnText += "<table><tr><th align='left'>Name</th><th align='left'>Size</th><th></th><th></th></tr>";
-  }
-  while (foundfile)
-  {
-    if (ishtml)
-    {
-      returnText += "<tr align='left'><td>" + String(foundfile.name()) + "</td><td>" + humanReadableSize(foundfile.size()) + "</td>";
-      returnText += "<td><button onclick=\"downloadDeleteButton(\'" + String(foundfile.name()) + "\', \'download\')\">Download</button>";
-      returnText += "<td><button onclick=\"downloadDeleteButton(\'" + String(foundfile.name()) + "\', \'delete\')\">Delete</button></tr>";
-    }
-    else
-    {
-      returnText += "File: " + String(foundfile.name()) + " Size: " + humanReadableSize(foundfile.size()) + "\n";
-    }
-    foundfile = root.openNextFile();
-  }
-  if (ishtml)
-  {
-    returnText += "</table>";
-  }
-  root.close();
-  foundfile.close();
-  return returnText;
 }

@@ -112,6 +112,18 @@ void infoln(String message)
 #endif
 }
 
+/**
+ * @brief Sends a message through Serial with Info (DEBUG_INFO) log level.
+ *
+ * @param message The message to send
+ */
+void infoln(IPAddress message)
+{
+#if DEBUG_LEVEL <= DEBUG_INFO
+    Serial.println(message);
+#endif
+}
+
 #pragma endregion "Info functions"
 
 #pragma region "Warning functions"
