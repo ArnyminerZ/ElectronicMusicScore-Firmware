@@ -45,7 +45,7 @@ void notFound(AsyncWebServerRequest *request)
  */
 String processor(const String &var)
 {
-    String result = "N/A";
+    String result = "";
 
     if (var == "FIRMWARE")
         result = FIRMWARE_VERSION;
