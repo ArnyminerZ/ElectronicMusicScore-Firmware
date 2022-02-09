@@ -9,7 +9,12 @@
  * 
  */
 
+#ifndef CONSTS_NET_H
+#define CONSTS_NET_H
+
 #define AUTH_DEFAULT_USER "admin"
 #define AUTH_DEFAULT_PASS "admin"
 
 #define WEB_PORT 80
+
+#endif

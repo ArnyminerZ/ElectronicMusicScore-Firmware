@@ -9,6 +9,12 @@
  * 
  */
 
+#ifndef PREF_CONSTS_H
+#define PREF_CONSTS_H
+
+// For storing key-value data
+Preferences preferences;
+
 /**
  * @brief The name of the preferences storage.
  */
@@ -54,3 +60,5 @@ const char *pref_authPass = "auth-pass";
  * @brief the preferences key for storing the Timezone preference of the user.
  */
 const char *pref_timezone = "tz";
+
+#endif

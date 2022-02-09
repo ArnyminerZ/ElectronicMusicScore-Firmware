@@ -9,6 +9,9 @@
  * 
  */
 
+#ifndef HASH_H
+#define HASH_H
+
 // Include dependencies
 #include "mbedtls/md.h"
 #include <Arduino.h>
@@ -44,3 +47,5 @@ String hash(const char *payload)
 
   return builder;
 }
+
+#endif

@@ -9,5 +9,10 @@
  * 
  */
 
+#ifndef CONSTS_WIFI_H
+#define CONSTS_WIFI_H
+
 #define WIFI_DEFAULT_SSID "DIGIFIBRA-dZSX"
 #define WIFI_DEFAULT_PASS "t2SPCE7yHs"
+
+#endif

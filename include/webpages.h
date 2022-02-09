@@ -1,3 +1,5 @@
+#ifndef WEBPAGES_H
+#define WEBPAGES_H
 #include <Arduino.h>
 
 const char index_html[] PROGMEM = R"rawliteral(
@@ -256,3 +258,5 @@ const char login_html[] PROGMEM = R"rawliteral(
 </body>
 </html>
 )rawliteral";
+
+#endif
