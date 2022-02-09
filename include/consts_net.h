@@ -17,4 +17,6 @@
 
 #define WEB_PORT 80
 
+#define DNS_PORT 53
+
 #endif

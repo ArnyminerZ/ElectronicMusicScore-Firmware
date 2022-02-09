@@ -3,6 +3,7 @@
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+#include <DNSServer.h>
 #include <SPIFFS.h>
 #include <Preferences.h>
 
@@ -42,6 +43,9 @@ struct Config
 Config config;             // configuration
 bool shouldReboot = false; // schedule a reboot
 AsyncWebServer *server;    // initialise webserver
+unsigned long blockingRequestTime = 0;
+IPAddress apIP(8,8,4,4); // The default android DNS
+DNSServer dnsServer;
 
 // function defaults
 String listFiles(bool ishtml = false);
@@ -144,38 +148,62 @@ void setup()
   info("\nConnecting to Wifi (");
   info(config.ssid);
   info(")");
+  WiFi.mode(WIFI_STA);
   WiFi.begin(config.ssid.c_str(), config.wifipassword.c_str());
+  blockingRequestTime = millis();
+  int timeout = preferences.getInt(pref_wifiTimeout, WIFI_TIMEOUT_DEFAULT);
   while (WiFi.status() != WL_CONNECTED)
   {
+    // If timed-out, break from while.
+    if (millis() - blockingRequestTime >= timeout)
+      break;
+
     delay(500);
     info(".");
   }
-  infoln("ok");
+  if (WiFi.status() == WL_CONNECTED)
+  {
+    infoln("ok");
 
-  infoln("\nNetwork Configuration:");
-  infoln("----------------------");
-  info("         SSID: ");
-  infoln(WiFi.SSID());
-  info("  Wifi Status: ");
-  infoln(String(WiFi.status()));
-  info("Wifi Strength: ");
-  info(String(WiFi.RSSI()));
-  infoln(" dBm");
-  info("          MAC: ");
-  infoln(String(WiFi.macAddress()));
-  info("           IP: ");
-  infoln(String(WiFi.localIP()));
-  info("       Subnet: ");
-  infoln(String(WiFi.subnetMask()));
-  info("      Gateway: ");
-  infoln(String(WiFi.gatewayIP()));
-  info("        DNS 1: ");
-  infoln(String(WiFi.dnsIP(0)));
-  info("        DNS 2: ");
-  infoln(String(WiFi.dnsIP(1)));
-  info("        DNS 3: ");
-  infoln(String(WiFi.dnsIP(2)));
-  infoln(String());
+    infoln("\nNetwork Configuration:");
+    infoln("----------------------");
+    info("         SSID: ");
+    infoln(WiFi.SSID());
+    info("  Wifi Status: ");
+    infoln(String(WiFi.status()));
+    info("Wifi Strength: ");
+    info(String(WiFi.RSSI()));
+    infoln(" dBm");
+    info("          MAC: ");
+    infoln(String(WiFi.macAddress()));
+    info("           IP: ");
+    infoln(String(WiFi.localIP()));
+    info("       Subnet: ");
+    infoln(String(WiFi.subnetMask()));
+    info("      Gateway: ");
+    infoln(String(WiFi.gatewayIP()));
+    info("        DNS 1: ");
+    infoln(String(WiFi.dnsIP(0)));
+    info("        DNS 2: ");
+    infoln(String(WiFi.dnsIP(1)));
+    info("        DNS 3: ");
+    infoln(String(WiFi.dnsIP(2)));
+    infoln(String());
+  }
+  else
+  {
+    infoln("timeout!");
+
+    info("Setting up AP...");
+    WiFi.mode(WIFI_AP);
+    WiFi.softAP("ESP32-DNSServer");
+    WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
+    infoln("ok");
+    
+    info("Setting up DNS server...");
+    dnsServer.start(DNS_PORT, "*", apIP);
+    infoln("ok");
+  }
 
   // Update time
   // Defaults to 3600  for Spain timezone (+1h=3600s)
@@ -201,6 +229,8 @@ void loop()
   // reboot if we've told it to reboot
   if (shouldReboot)
     rebootESP("Web Admin Initiated Reboot");
+
+  dnsServer.processNextRequest();
 
   delay(10);
 }

@@ -61,4 +61,15 @@ const char *pref_authPass = "auth-pass";
  */
 const char *pref_timezone = "tz";
 
+/**
+ * @brief The preferences key for storing the amount of time the device will wait until giving up on connecting to a WiFi network.
+ */
+const char *pref_wifiTimeout = "wifi-to";
+
+
+/**
+ * @brief The amount of time in milliseconds that the device will try until giving up on connecting to a wifi network.
+ */
+#define WIFI_TIMEOUT_DEFAULT 30*1000
+
 #endif
