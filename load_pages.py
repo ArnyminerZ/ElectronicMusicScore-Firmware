@@ -35,7 +35,7 @@ for file in files_list:
         f.write(minified)
         f.write("\n")
     elif file.endswith("css"):
-        minified = rcssmin.cssmin(stream.read())
+        minified = rcssmin.cssmin(stream.read()).replace("%", "%%")
         f.write(minified)
         f.write("\n")
     elif file.endswith("js"):
