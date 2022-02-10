@@ -1,229 +1,103 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta charset="UTF-8" />
 
-    <style>
-      .spinner {
-        border: 4px solid rgba(0, 0, 0, 0.1);
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        border-left-color: #09f;
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8" />
+  <link rel="stylesheet" href="styles.css" />
 
-        animation: spin 1s ease infinite;
-      }
+  <title>Digital Music Score</title>
+</head>
 
-      @keyframes spin {
-        0% {
-          transform: rotate(0deg);
-        }
-
-        100% {
-          transform: rotate(360deg);
-        }
-      }
-
-      .hide {
-        display: none;
-      }
-
-      ul.nav {
-        list-style-type: none;
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-        background-color: #333;
-      }
-
-      ul.nav li {
-        float: left;
-      }
-
-      ul.nav li a {
-        display: block;
-        color: white;
-        text-align: center;
-        padding: 14px 16px;
-        text-decoration: none;
-      }
-
-      ul.nav li.right {
-        float: right;
-      }
-
-      ul.nav li a:hover:not(.active) {
-        background-color: #111;
-      }
-
-      .active {
-        background-color: #04aa6d;
-      }
-
-      li.dropdown {
-        display: inline-block;
-      }
-
-      .dropdown-content {
-        display: none;
-        position: absolute;
-        background-color: #f9f9f9;
-        min-width: 160px;
-        box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
-        z-index: 1;
-        padding: 12px, 10px;
-      }
-
-      .dropdown.right .dropdown-content {
-        right: 0;
-      }
-
-      .dropdown-content a {
-        color: black;
-        padding: 12px 16px;
-        text-decoration: none;
-        display: block;
-        text-align: left;
-      }
-
-      .dropdown-content a:hover {
-        background-color: #f1f1f1;
-      }
-
-      .dropdown:hover .dropdown-content {
-        display: block;
-      }
-    </style>
-  </head>
-
-  <body style="margin: 0">
-    <ul class="nav">
-      <li><a class="active" href="#home">Home</a></li>
-      <li><a href="#news">News</a></li>
-      <li><a href="#contact">Contact</a></li>
-      <li class="right dropdown">
-        <a href="javascript:void(0)" class="dropbtn">About</a>
-        <div class="dropdown-content">
-          <p>Firmware version: %FIRMWARE%</p>
-        </div>
-      </li>
-    </ul>
+<body style="margin: 0" onload="onload()">
+  <ul class="nav">
+    <li><a class="active" href="#home" onclick="event.preventDefault(); selectTab(0); return false;">Home</a></li>
+    <li><a href="#settings" onclick="event.preventDefault(); selectTab(1); return false;">Settings</a></li>
+    <li class="right"><a href="#" onclick="event.preventDefault(); logoutButton(); return false;">Logout</a></li>
+    <li class="right dropdown">
+      <a href="javascript:void(0)" class="dropbtn">About</a>
+      <div class="dropdown-content">
+        <p>Firmware version: %FIRMWARE%</p>
+        <hr />
+        <p>Free storage: <span id="freespiffs">%FREESPIFFS%</span></p>
+        <p>Used storage: <span id="usedspiffs">%USEDSPIFFS%</span></p>
+        <p>Total storage: <span id="totalspiffs">%TOTALSPIFFS%</span></p>
+        <progress id="storageProgress" value="%USEDSPIFFS_INT%" max="%TOTALSPIFFS_INT%"></progress>
+      </div>
+    </li>
+  </ul>
+  <div id="home" class="panel">
     <p>
-      Free Storage: <span id="freespiffs">%FREESPIFFS%</span> | Used Storage:
-      <span id="usedspiffs">%USEDSPIFFS%</span> | Total Storage:
-      <span id="totalspiffs">%TOTALSPIFFS%</span>
-    </p>
-    <p>
-      <button onclick="logoutButton()">Logout</button>
-      <button onclick="rebootButton()">Reboot</button>
-      <button onclick="listFilesButton()">List Files</button>
-      <button onclick="showUploadButtonFancy()">Upload File</button>
+      <button onclick="rebootButton()" class="icon" title="Reboot">
+        <svg fill="#000000" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64px" height="64px">
+          <path
+            d="M58,32c0,14.359-11.641,26-26,26S6,46.359,6,32C6,17.641,17.641,6,32,6S58,17.641,58,32z M45.581,23.785	c-1.845-2.961-4.678-5.273-7.941-6.478l-1.404,3.746c2.416,0.931,4.501,2.685,5.835,4.888c1.348,2.2,1.873,4.846,1.57,7.394	c-0.305,2.544-1.501,4.95-3.319,6.747c-1.814,1.799-4.221,2.973-6.745,3.261c-2.532,0.311-5.136-0.242-7.295-1.55	c-2.165-1.297-3.882-3.329-4.769-5.669c-0.903-2.326-0.991-4.98-0.245-7.35c0.48-1.56,1.321-3.001,2.415-4.212l3.145,3.493	l2.75-12.047l-12.281,1.462l3.057,3.395c-1.732,1.844-3.042,4.08-3.751,6.511c-1.017,3.433-0.833,7.176,0.502,10.485	c1.318,3.313,3.775,6.125,6.837,7.899c3.059,1.793,6.717,2.5,10.2,2.024c3.501-0.449,6.815-2.125,9.27-4.632	c2.466-2.498,4.068-5.84,4.438-9.33C48.226,30.353,47.446,26.742,45.581,23.785z" />
+        </svg>
+      </button>
+      <button onclick="listFilesButton()" class="icon" title="List files">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path
+            d="M3.71,16.29a1,1,0,0,0-.33-.21,1,1,0,0,0-.76,0,1,1,0,0,0-.33.21,1,1,0,0,0-.21.33,1,1,0,0,0,.21,1.09,1.15,1.15,0,0,0,.33.21.94.94,0,0,0,.76,0,1.15,1.15,0,0,0,.33-.21,1,1,0,0,0,.21-1.09A1,1,0,0,0,3.71,16.29ZM7,8H21a1,1,0,0,0,0-2H7A1,1,0,0,0,7,8ZM3.71,11.29a1,1,0,0,0-1.09-.21,1.15,1.15,0,0,0-.33.21,1,1,0,0,0-.21.33.94.94,0,0,0,0,.76,1.15,1.15,0,0,0,.21.33,1.15,1.15,0,0,0,.33.21.94.94,0,0,0,.76,0,1.15,1.15,0,0,0,.33-.21,1.15,1.15,0,0,0,.21-.33.94.94,0,0,0,0-.76A1,1,0,0,0,3.71,11.29ZM21,11H7a1,1,0,0,0,0,2H21a1,1,0,0,0,0-2ZM3.71,6.29a1,1,0,0,0-.33-.21,1,1,0,0,0-1.09.21,1.15,1.15,0,0,0-.21.33.94.94,0,0,0,0,.76,1.15,1.15,0,0,0,.21.33,1.15,1.15,0,0,0,.33.21,1,1,0,0,0,1.09-.21,1.15,1.15,0,0,0,.21-.33.94.94,0,0,0,0-.76A1.15,1.15,0,0,0,3.71,6.29ZM21,16H7a1,1,0,0,0,0,2H21a1,1,0,0,0,0-2Z" />
+        </svg>
+      </button>
+      <button onclick="showUploadModal()" class="icon" title="Upload file">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path
+            d="M8.71,7.71,11,5.41V15a1,1,0,0,0,2,0V5.41l2.29,2.3a1,1,0,0,0,1.42,0,1,1,0,0,0,0-1.42l-4-4a1,1,0,0,0-.33-.21,1,1,0,0,0-.76,0,1,1,0,0,0-.33.21l-4,4A1,1,0,1,0,8.71,7.71ZM21,12a1,1,0,0,0-1,1v6a1,1,0,0,1-1,1H5a1,1,0,0,1-1-1V13a1,1,0,0,0-2,0v6a3,3,0,0,0,3,3H19a3,3,0,0,0,3-3V13A1,1,0,0,0,21,12Z" />
+        </svg>
+      </button>
     </p>
     <div class="spinner hide" id="spinner"></div>
     <p id="status"></p>
     <p id="detailsheader"></p>
     <p id="details"></p>
-    <script>
-      function logoutButton() {
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", "/logout", true);
-        xhr.send();
-        window.open("/logout", "_self");
-      }
-      function rebootButton() {
-        document.getElementById("statusdetails").innerHTML =
-          "Invoking Reboot ...";
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", "/reboot", true);
-        xhr.send();
-        window.open("/reboot", "_self");
-      }
-      function listFilesButton() {
-        const spinnerElement = document.getElementById("spinner");
-        spinnerElement.classList.remove("hide");
-        xmlhttp = new XMLHttpRequest();
-        xmlhttp.open("GET", "/listfiles", false);
-        xmlhttp.send();
-        document.getElementById("detailsheader").innerHTML = "<h3>Files<h3>";
-        document.getElementById("details").innerHTML = xmlhttp.responseText;
-        spinnerElement.classList.add("hide");
-      }
-      function downloadDeleteButton(filename, action) {
-        var urltocall = "/file?name=" + filename + "&action=" + action;
-        xmlhttp = new XMLHttpRequest();
-        if (action == "delete") {
-          xmlhttp.open("GET", urltocall, false);
-          xmlhttp.send();
-          document.getElementById("status").innerHTML = xmlhttp.responseText;
-          xmlhttp.open("GET", "/listfiles", false);
-          xmlhttp.send();
-          document.getElementById("details").innerHTML = xmlhttp.responseText;
-        }
-        if (action == "download") {
-          document.getElementById("status").innerHTML = "";
-          window.open(urltocall, "_blank");
-        }
-      }
-      function showUploadButtonFancy() {
-        document.getElementById("detailsheader").innerHTML =
-          "<h3>Upload File<h3>";
-        document.getElementById("status").innerHTML = "";
-        var uploadform =
-          '<form method = "POST" action = "/" enctype="multipart/form-data"><input type="file" name="data"/><input type="submit" name="upload" value="Upload" title = "Upload File"></form>';
-        document.getElementById("details").innerHTML = uploadform;
-        var uploadform =
-          '<form id="upload_form" enctype="multipart/form-data" method="post">' +
-          '<input type="file" name="file1" id="file1" onchange="uploadFile()"><br>' +
-          '<progress id="progressBar" value="0" max="100" style="width:300px;"></progress>' +
-          '<h3 id="status"></h3>' +
-          '<p id="loaded_n_total"></p>' +
-          "</form>";
-        document.getElementById("details").innerHTML = uploadform;
-      }
-      function _(el) {
-        return document.getElementById(el);
-      }
-      function uploadFile() {
-        var file = _("file1").files[0];
-        // alert(file.name+" | "+file.size+" | "+file.type);
-        var formdata = new FormData();
-        formdata.append("file1", file);
-        var ajax = new XMLHttpRequest();
-        ajax.upload.addEventListener("progress", progressHandler, false);
-        ajax.addEventListener("load", completeHandler, false); // doesnt appear to ever get called even upon success
-        ajax.addEventListener("error", errorHandler, false);
-        ajax.addEventListener("abort", abortHandler, false);
-        ajax.open("POST", "/");
-        ajax.send(formdata);
-      }
-      function progressHandler(event) {
-        //_("loaded_n_total").innerHTML = "Uploaded " + event.loaded + " bytes of " + event.total; // event.total doesnt show accurate total file size
-        _("loaded_n_total").innerHTML = "Uploaded " + event.loaded + " bytes";
-        var percent = (event.loaded / event.total) * 100;
-        _("progressBar").value = Math.round(percent);
-        _("status").innerHTML =
-          Math.round(percent) + "% uploaded... please wait";
-        if (percent >= 100) {
-          _("status").innerHTML = "Please wait, writing file to filesystem";
-        }
-      }
-      function completeHandler(event) {
-        _("status").innerHTML = "Upload Complete";
-        _("progressBar").value = 0;
-        xmlhttp = new XMLHttpRequest();
-        xmlhttp.open("GET", "/listfiles", false);
-        xmlhttp.send();
-        document.getElementById("status").innerHTML = "File Uploaded";
-        document.getElementById("detailsheader").innerHTML = "<h3>Files<h3>";
-        document.getElementById("details").innerHTML = xmlhttp.responseText;
-      }
-      function errorHandler(event) {
-        _("status").innerHTML = "Upload Failed";
-      }
-      function abortHandler(event) {
-        _("status").innerHTML = "inUpload Aborted";
-      }
-    </script>
-  </body>
+  </div>
+  <div id="settings" class="panel hide">
+    <h2>Settings</h2>
+    <form>
+      <h3>Security</h3>
+      <p>Settings regarding security parameters, such as login parameters, for example.</p>
+      <div class="settings-row">
+        <div class="settings-split">
+          <label for="sUsername">Username</label>
+          <input type="text" placeholder="Auth username" id="sUsername" name="changeUsername" tabindex="1" />
+          <small class="help">The username used for logging into the UI</small>
+        </div>
+        <div class="settings-split">
+          <label for="sPassword">Password</label>
+          <input type="text" placeholder="Auth password" id="sPassword" name="changePassword" tabindex="2" />
+          <small class="help">The password used with the username to log into the UI</small>
+        </div>
+      </div>
+      <div class="settings-row">
+        <p style="margin-bottom: 0;">Sessions:</p>
+        <table class="settings-sessions">
+          <tbody>
+            <tr>
+              <td>88c10132-d308-491f-a690-76e6251d21f6</td>
+              <td><button>Delete</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </form>
+  </div>
+
+  <div id="uploadModal" class="modal">
+    <!-- Modal content -->
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h3>Upload File<h3>
+          <form id="upload_form" enctype="multipart/form-data" method="post">
+            <input type="file" name="file1" id="file1" onchange="uploadFile()"><br>
+            <progress id="progressBar" value="0" max="100" style="width:300px;"></progress>
+            <h3 id="status"></h3>
+            <p id="loaded_n_total"></p>
+          </form>
+    </div>
+  </div>
+
+  <script type="application/javascript" src="scripts.js"></script>
+</body>
+
 </html>
