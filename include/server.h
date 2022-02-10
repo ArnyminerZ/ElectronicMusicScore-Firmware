@@ -55,6 +55,10 @@ String processor(const String &var)
         result = humanReadableSize(SPIFFS.usedBytes());
     else if (var == "TOTALSPIFFS")
         result = humanReadableSize(SPIFFS.totalBytes());
+    else if (var == "USEDSPIFFS_INT")
+        result = String(SPIFFS.usedBytes());
+    else if (var == "TOTALSPIFFS_INT")
+        result = String(SPIFFS.totalBytes());
 
     return result;
 }
@@ -121,6 +125,14 @@ void configureWebServer(AsyncWebServer *server, boolean *shouldReboot)
     // run handleUpload function when any file is uploaded
     server->onFileUpload(handleUpload);
 
+    // The file for styles
+    server->on("/styles.css", HTTP_GET, [](AsyncWebServerRequest *request)
+               { request->send_P(200, "text/css", styles_css, processor); });
+
+    // The file for scripts
+    server->on("/scripts.js", HTTP_GET, [](AsyncWebServerRequest *request)
+               { request->send_P(200, "application/javascript", scripts_js, processor); });
+
     // visiting this page will cause you to be logged out
     server->on(
         "/logout",
@@ -128,9 +140,8 @@ void configureWebServer(AsyncWebServer *server, boolean *shouldReboot)
         [](AsyncWebServerRequest *request)
         {
             // Clears cookies
-            AsyncWebServerResponse *response = request->beginResponse(301);
-            response->addHeader("Set-Cookie", "SESSIONID=");
-            response->addHeader("Location", "/");
+            AsyncWebServerResponse *response = request->beginResponse(200, "text/html", logout_html);
+            response->addHeader("Set-Cookie", "SESSIONID=; Max-Age=-1");
             request->send(response);
         });
 
@@ -270,7 +281,7 @@ void configureWebServer(AsyncWebServer *server, boolean *shouldReboot)
                 preferences.putUShort(pref_sessionCount, ++sessionsCount);
 
                 AsyncWebServerResponse *response = request->beginResponse(303);
-                response->addHeader("Set-Cookie", "SESSIONID=" + userHash);
+                response->addHeader("Set-Cookie", "SESSIONID=" + userHash + "; Max-Age=" + String(SESSION_EXPIRATION_TIME_SECONDS / 1000));
                 response->addHeader("Location", "/");
                 request->send(response);
             }
