@@ -71,11 +71,12 @@
       </div>
       <div class="settings-row">
         <p style="margin-bottom: 0;">Sessions:</p>
+        <input type="hidden" value="%AUTH_SESSIONS%" id="authSessions" />
         <table class="settings-sessions">
-          <tbody>
+          <tbody id="sessionsBody">
             <tr>
               <td>88c10132-d308-491f-a690-76e6251d21f6</td>
-              <td><button>Delete</button></td>
+              <td><button onclick="config('delete_session=')">Delete</button></td>
             </tr>
           </tbody>
         </table>

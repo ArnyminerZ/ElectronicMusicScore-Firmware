@@ -1,67 +1,120 @@
-function selectTab(index) {
-    const navs = document.getElementsByClassName("nav");
-    if (navs.length > 0) {
-        const menuItems = navs[0].getElementsByTagName("li");
-        for (let c = 0; c < menuItems.length; c++) {
-            const item = menuItems[c];
-            item.getElementsByTagName("a")[0].classList.remove("active");
-        }
-        const link = menuItems[index].getElementsByTagName("a")[0];
-        link.classList.add("active");
+const _ = (el) => document.getElementById(el);
+/**
+ * Selects a child of [p] based on [q].
+ * @param {DOMElement} p The parent element to get the children from.
+ * @param {String} q The query selector for the children.
+ * @returns {DOMElement}
+ */
+const $ = (q, p = null) => (p == null ? document : p).querySelector(q);
 
-        const panels = document.getElementsByClassName("panel");
-        for (let c = 0; c < panels.length; c++)
-            panels[c].classList.add("hide");
+/**
+ * Selects all children of [p] based on [q].
+ * @param {DOMElement} p The parent element to get the children from.
+ * @param {String} q The query selector for the children.
+ * @returns {DOMElement}
+ */
+const S = (q, p = null) => (p == null ? document : p).querySelectorAll(q);
 
-        document.getElementById(link.getAttribute("href").substring(1)).classList.remove("hide");
-    }
+/**
+ * Sets the innerHTML parameter of [e] to [h];
+ * @param {DOMElement} e The element to modify.
+ * @param {String} h The HTML code to set.
+ * @returns The operation result
+ */
+const H = (e, h = "") => e.innerHTML = h;
+
+/**
+ * Appends [h] to the innerHTML parameter of [e];
+ * @param {DOMElement} e The element to modify.
+ * @param {String} h The HTML code to append.
+ * @returns The operation result
+ */
+const HA = (e, h = "") => e.innerHTML += h;
+
+/**
+ * Makes a GET request to [p].
+ * @param {String} p The path to make the request to.
+ */
+const G = (p) => {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", p, false);
+    xhr.send();
+    return xhr.responseText;
+}
+
+/**
+ * Adds a class to the class list of [e].
+ * @param {DOMElement} e The element to add the class to
+ * @param {String} c The class to add to [e].
+ */
+const CA = (e, c) => e.classList.add(c);
+
+/**
+ * Removes a class from the class list of [e].
+ * @param {DOMElement} e The element to remove the class from
+ * @param {String} c The class to remove to [e].
+ */
+const CR = (e, c) => e.classList.remove(c);
+
+/**
+ * Opens the path [p] on self.
+ * @param {String} p The path to load.
+ * @returns 
+ */
+const N = (p) => window.open(p, "_self");
+
+/**
+ * Opens the path [p] on _blank.
+ * @param {String} p The path to load.
+ * @returns 
+ */
+const NB = (p) => window.open(p, "_blank");
+
+function selectTab(i) {
+    // Get all children elements of .nav of type li
+    const mi = S("li", $(".nav"));
+    for (let it of mi)
+        CR($("a", it), "active"); // Remove class active from child a in item
+
+    const a = $("a", mi[i]);
+
+    // Remove class active from first child a of element i in menuItems
+    CA(a, "active");
+
+    for (let p of S(".panel"))
+        CA(p, "hide");
+
+    CR(_(a.getAttribute("href").substring(1)), "hide");
 }
 function logoutButton() {
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", "/logout", true);
-    xhr.send();
-    window.open("/logout", "_self");
+    G("/logout");
+    N("/logout");
 }
 function rebootButton() {
-    document.getElementById("statusdetails").innerHTML =
-        "Invoking Reboot ...";
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", "/reboot", true);
-    xhr.send();
-    window.open("/reboot", "_self");
+    H(_("statusdetails"), "Invoking Reboot ...");
+    G("/reboot");
+    N("/reboot");
 }
 function listFilesButton() {
-    const spinnerElement = document.getElementById("spinner");
-    spinnerElement.classList.remove("hide");
-    xmlhttp = new XMLHttpRequest();
-    xmlhttp.open("GET", "/listfiles", false);
-    xmlhttp.send();
-    document.getElementById("detailsheader").innerHTML = "<h3>Files<h3>";
-    document.getElementById("details").innerHTML = xmlhttp.responseText;
-    spinnerElement.classList.add("hide");
+    const spinnerElement = _("spinner");
+    CR(spinnerElement, "hide");
+    H(_("detailsheader"), "<h3>Files</h3>");
+    H(_("details"), G("/listfiles"))
+    CA(spinnerElement, "hide");
 }
 function downloadDeleteButton(filename, action) {
-    var urltocall = "/file?name=" + filename + "&action=" + action;
-    xmlhttp = new XMLHttpRequest();
+    var uc = `/file?name=${filename}&action=${action}`;
     if (action == "delete") {
-        xmlhttp.open("GET", urltocall, false);
-        xmlhttp.send();
-        document.getElementById("status").innerHTML = xmlhttp.responseText;
-        xmlhttp.open("GET", "/listfiles", false);
-        xmlhttp.send();
-        document.getElementById("details").innerHTML = xmlhttp.responseText;
+        H(_("status"), G(uc));
+        H(_("details"), G("/listfiles"));
     }
     if (action == "download") {
-        document.getElementById("status").innerHTML = "";
-        window.open(urltocall, "_blank");
+        H(_("status"));
+        NB(uc);
     }
-}
-function _(el) {
-    return document.getElementById(el);
 }
 function uploadFile() {
     var file = _("file1").files[0];
-    // alert(file.name+" | "+file.size+" | "+file.type);
     var formdata = new FormData();
     formdata.append("file1", file);
     var ajax = new XMLHttpRequest();
@@ -73,45 +126,49 @@ function uploadFile() {
     ajax.send(formdata);
 }
 function progressHandler(event) {
-    //_("loaded_n_total").innerHTML = "Uploaded " + event.loaded + " bytes of " + event.total; // event.total doesnt show accurate total file size
-    _("loaded_n_total").innerHTML = "Uploaded " + event.loaded + " bytes";
-    var percent = (event.loaded / event.total) * 100;
-    _("progressBar").value = Math.round(percent);
-    _("status").innerHTML =
-        Math.round(percent) + "% uploaded... please wait";
-    if (percent >= 100) {
-        _("status").innerHTML = "Please wait, writing file to filesystem";
-    }
+    H(_("loaded_n_total"), `Uploaded ${event.loaded} bytes`);
+    var percent = Math.round((event.loaded / event.total) * 100);
+    _("progressBar").value = percent;
+    H(_("status"), `${percent}% uploaded... please wait`);
+    if (percent >= 100)
+        H(_("status"), "Please wait, writing file to filesystem");
 }
 function completeHandler(event) {
     _("status").innerHTML = "Upload Complete";
     _("progressBar").value = 0;
-    xmlhttp = new XMLHttpRequest();
-    xmlhttp.open("GET", "/listfiles", false);
-    xmlhttp.send();
-    document.getElementById("status").innerHTML = "File Uploaded";
-    document.getElementById("detailsheader").innerHTML = "<h3>Files<h3>";
-    document.getElementById("details").innerHTML = xmlhttp.responseText;
-    document.getElementById("uploadModal").style.display = "none";
+    _("details").innerHTML = G("/listfiles");
+    _("status").innerHTML = "File Uploaded";
+    _("detailsheader").innerHTML = "<h3>Files<h3>";
+    _("uploadModal").style.display = "none";
 }
 function errorHandler(event) {
-    _("status").innerHTML = "Upload Failed";
+    H(_("status"), "Upload Failed");
 }
 function abortHandler(event) {
-    _("status").innerHTML = "inUpload Aborted";
+    H(_("status"), "Upload Aborted");
 }
 function onload() {
-    var modal = document.getElementById("uploadModal");
-    var span = document.getElementsByClassName("close")[0];
-    span.onclick = function () {
+    // Load the modal events
+    const modal = _("uploadModal");
+    $(".close").onclick = () => {
         modal.style.display = "none";
-    }
-    window.onclick = function (event) {
+    };
+    window.onclick = (event) => {
         if (event.target == modal)
             modal.style.display = "none";
-    }
+    };
+    // Load the sessions
+    const e = _("sessionsBody");
+    const s = _("authSessions").value;
+    const r = s.substring(s.indexOf("^") + 1);
+    H(e); // Clear the children
+    for (i of r.split(";"))
+        if (i.length > 0) {
+            // First element is session, second creation date
+            const u = i.split(",");
+            HA(e, `<tr><td>${u[0]}</td><td><button onclick="config('delete_session=${i}')">Delete</button></td></tr>`);
+        }
 }
 function showUploadModal() {
-    var modal = document.getElementById("uploadModal");
-    modal.style.display = "block";
+    _("uploadModal").style.display = "block";
 }

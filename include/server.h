@@ -59,6 +59,17 @@ String processor(const String &var)
         result = String(SPIFFS.usedBytes());
     else if (var == "TOTALSPIFFS_INT")
         result = String(SPIFFS.totalBytes());
+    else if (var == "AUTH_SESSIONS")
+    {
+        unsigned int sessionsCount = preferences.getUShort(pref_sessionCount, 0U);
+        result = String(sessionsCount) + "^";
+        for (int c = 0; c < sessionsCount; c++)
+        {
+            String sessionId = preferences.getString((String(pref_sessionPrefix) + String(c)).c_str());
+            unsigned int sessionCreation = preferences.getULong((String(pref_sessionExpPrefix) + String(c)).c_str());
+            result += sessionId + "," + String(sessionCreation) + ";";
+        }
+    }
 
     return result;
 }
