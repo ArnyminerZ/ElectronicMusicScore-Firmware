@@ -23,11 +23,11 @@ body {
 
 @keyframes spin {
     0% {
-    transform: rotate(0deg);
+        transform: rotate(0deg);
     }
 
     100% {
-    transform: rotate(360deg);
+        transform: rotate(360deg);
     }
 }
 
@@ -64,7 +64,7 @@ ul.nav li a:hover:not(.active) {
 }
 
 .active {
-    background-color: #04aa6d;
+    background-color: #3c6e71;
 }
 
 li.dropdown {
@@ -170,14 +170,105 @@ button.icon svg {
     cursor: pointer;
 }
 
+/** <==> START SNACKBAR <==> **/
+/* The snackbar - position it at the bottom and in the middle of the screen */
+#sb {
+    /* Hidden by default. Visible on click */
+    visibility: hidden;
+    /* Set a default minimum width */
+    min-width: 250px;
+    /* Divide value of min-width by 2 */
+    margin-left: -125px;
+    /* Black background color */
+    background-color: #333;
+    /* White text color */
+    color: #fff;
+    /* Centered text */
+    text-align: center;
+    /* Rounded borders */
+    border-radius: 2px;
+    /* Padding */
+    padding: 16px;
+    /* Sit on top of the screen */
+    position: fixed;
+    /* Add a z-index if needed */
+    z-index: 1;
+    /* Center the snackbar */
+    left: 50%;
+    /* 30px from the bottom */
+    bottom: 30px;
+}
+
+/* Show the snackbar when clicking on a button (class added with JavaScript) */
+#sb.show {
+    /* Show the snackbar */
+    visibility: visible;
+    /* Add animation: Take 0.5 seconds to fade in and out the snackbar.
+    However, delay the fade out process for 2.5 seconds */
+    -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+    animation: fadein 0.5s, fadeout 0.5s 2.5s;
+}
+
+/* Animations to fade the snackbar in and out */
+@-webkit-keyframes fadein {
+    from {
+        bottom: 0;
+        opacity: 0;
+    }
+
+    to {
+        bottom: 30px;
+        opacity: 1;
+    }
+}
+
+@keyframes fadein {
+    from {
+        bottom: 0;
+        opacity: 0;
+    }
+
+    to {
+        bottom: 30px;
+        opacity: 1;
+    }
+}
+
+@-webkit-keyframes fadeout {
+    from {
+        bottom: 30px;
+        opacity: 1;
+    }
+
+    to {
+        bottom: 0;
+        opacity: 0;
+    }
+}
+
+@keyframes fadeout {
+    from {
+        bottom: 30px;
+        opacity: 1;
+    }
+
+    to {
+        bottom: 0;
+        opacity: 0;
+    }
+}
+
+/** <==> END SNACKBAR <==> **/
+
 /* Button */
 button {
-    background-color: #04AA6D;
+    background-color: #3c6e71;
     color: white;
     padding: 14px 20px;
     margin: 8px 0;
     border: none;
     cursor: pointer;
+    border-radius: 12px;
 }
 
 button:hover {
@@ -214,8 +305,8 @@ input[type=password] {
 /* Change styles for span and cancel button on extra small screens */
 @media screen and (max-width: 300px) {
     span.psw {
-    display: block;
-    float: none;
+        display: block;
+        float: none;
     }
 
     .cancelbtn {
@@ -243,6 +334,7 @@ input[type=password] {
 .settings-sessions {
     width: 98%;
 }
+
 .settings-sessions tr {
     padding: 2px 8px;
 }
@@ -251,6 +343,7 @@ input[type=password] {
     display: inline-block;
     width: 92%;
 }
+
 .settings-sessions tr button {
     display: inline-block;
     margin: 0;
@@ -259,4 +352,87 @@ input[type=password] {
 .settings-sessions tr button:hover {
     background-color: #dd0426;
     cursor: pointer;
+}
+
+.files-title > * {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.files-title h3 {
+    margin-right: 10px;
+    text-decoration: underline;
+}
+
+.files-table {
+    width: 100%;
+}
+
+.files-table .child {
+    background-color: #ced4da;
+    border-radius: 12px;
+    display: inline-block;
+    margin-bottom: 10px;
+}
+
+@media screen and (max-width: 750px) {
+    .files-table .child {
+        width: 100%;
+    }
+}
+
+@media screen and (min-width: 750px) {
+    .files-table .child {
+        width: 33.3%;
+    }
+}
+
+.files-table .child .title {
+    width: auto;
+    padding: 16px 12px;
+    font-size: large;
+    font-weight: bold;
+    color: #212529;
+}
+
+.files-table .child .details,
+.files-table .child .actions {
+    width: 100%;
+    vertical-align: middle;
+}
+
+.files-table .child .details .type {
+    background-color: #ae2012;
+    color: #fff;
+    border-radius: 10px;
+    padding: 2px 4px;
+    font-size: 10px;
+    margin-left: 10px;
+}
+
+.files-table .child .details .size {
+    color: #212529;
+    float: right;
+    margin-right: 10px;
+}
+
+.files-table .child .actions button:not(.show) {
+    width: 47%;
+    margin-bottom: 0;
+}
+
+.files-table .child .actions button.show {
+    width: 96%;
+    margin-left: 8px;
+    margin-right: 4px;
+    margin-top: 5px;
+}
+
+.files-table .child .actions button:nth-of-type(1) {
+    margin-left: 8px;
+}
+
+.files-table .child .actions button:nth-of-type(2) {
+    margin-left: 2px;
+    margin-right: 4px;
 }

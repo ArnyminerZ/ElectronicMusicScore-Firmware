@@ -33,13 +33,18 @@ const HA = (e, h = "") => e.innerHTML += h;
 
 /**
  * Makes a GET request to [p].
- * @param {String} p The path to make the request to.
+ * @param {String?} p The path to make the request to.
  */
 const G = (p) => {
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", p, false);
-    xhr.send();
-    return xhr.responseText;
+    try {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", p, false);
+        xhr.send();
+        return xhr.responseText;
+    } catch (e) {
+        console.error("Could not load", p, ". Error:", e);
+        return "";
+    }
 }
 
 /**
@@ -70,6 +75,28 @@ const N = (p) => window.open(p, "_self");
  */
 const NB = (p) => window.open(p, "_blank");
 
+/**
+ * Displays the text [t] in the snackbar.
+ * @param {String} t The text to display.
+ * @param {Number} d The amount of time in ms the snackbar will be shown.
+ */
+const sb = (t, d = 3000) => {
+    const s = _("sb");
+    CA(s, "show"); // Shows the snackbar
+    H(s, t); // Set the text
+    setTimeout(() => CR(s, "show"), d); // Hides after d ms
+}
+
+/**
+ * Converts [size] into a human readable string.
+ * @param {Number} size The size to convert in bytes.
+ * @return {String} [size] in a "human readable" format.
+ */
+function fileSize(size) {
+    var i = Math.floor(Math.log(size) / Math.log(1024));
+    return (size / Math.pow(1024, i)).toFixed(2) * 1 + ' ' + ['B', 'kB', 'MB', 'GB', 'TB'][i];
+}
+
 function selectTab(i) {
     // Get all children elements of .nav of type li
     const mi = S("li", $(".nav"));
@@ -86,66 +113,90 @@ function selectTab(i) {
 
     CR(_(a.getAttribute("href").substring(1)), "hide");
 }
-function logoutButton() {
-    G("/logout");
-    N("/logout");
-}
-function rebootButton() {
-    H(_("statusdetails"), "Invoking Reboot ...");
-    G("/reboot");
-    N("/reboot");
-}
-function listFilesButton() {
+let filesItemTemplate;
+function listFiles() {
     const spinnerElement = _("spinner");
     CR(spinnerElement, "hide");
-    H(_("detailsheader"), "<h3>Files</h3>");
-    H(_("details"), G("/listfiles"))
-    CA(spinnerElement, "hide");
+    const c = _("filesTable");
+    try {
+        const fs = JSON.parse(G("/listfiles")).files;
+        H(c); // Clear the table container
+        for (let f of fs) {
+            // We take substring 1 for removing the initial /
+            const n = f.name.substring(1); // The name of the file
+            const ep = n.lastIndexOf("."); // The position of the last point/extension
+            HA(
+                c,
+                filesItemTemplate
+                    .replaceAll("{TITLE}", n.substring(0, ep))
+                    .replaceAll("{TYPE}", n.substring(ep + 1).toUpperCase())
+                    .replaceAll("{SIZE}", fileSize(f.size))
+                    .replaceAll("{FILENAME}", f.name)
+            );
+        }
+    } catch (e) {
+        console.error("Could not load the list of files. Error:", e);
+    } finally {
+        CA(spinnerElement, "hide");
+    }
 }
-function downloadDeleteButton(filename, action) {
+function fileAction(filename, action) {
     var uc = `/file?name=${filename}&action=${action}`;
     if (action == "delete") {
-        H(_("status"), G(uc));
-        H(_("details"), G("/listfiles"));
+        CR(_("spinner"), "hide");
+        try {
+            // Call the backend for deleting the file
+            G(uc)
+            // If no errors ocurred, list files and show snackbar
+            listFiles();
+            sb("Deleted file");
+        } catch (e) {
+            // If an errors occurs, show snackbar
+            sb("Could not delete file");
+            console.error("Could not delete file. Error:", e);
+        }
+        CA(_("spinner"), "hide");
     }
-    if (action == "download") {
-        H(_("status"));
+    if (action == "download")
         NB(uc);
-    }
 }
 function uploadFile() {
-    var file = _("file1").files[0];
+    var file = _("uploadFi").files[0];
     var formdata = new FormData();
-    formdata.append("file1", file);
+    formdata.append("uploadFi", file);
     var ajax = new XMLHttpRequest();
-    ajax.upload.addEventListener("progress", progressHandler, false);
-    ajax.addEventListener("load", completeHandler, false); // doesnt appear to ever get called even upon success
-    ajax.addEventListener("error", errorHandler, false);
-    ajax.addEventListener("abort", abortHandler, false);
+    ajax.upload.addEventListener("progress", (event) => {
+        H(_("loaded_n_total"), `Uploaded ${event.loaded} bytes`);
+        var percent = Math.round((event.loaded / event.total) * 100);
+
+        _("uploadPB").value = percent;
+        H(_("uploadSt"), `${percent}% uploaded... please wait`);
+        if (percent >= 100)
+            H(_("uploadSt"), "Please wait, writing file to filesystem");
+    }, false);
+    ajax.addEventListener("load", () => {
+        // Hide modal
+        _("uploadModal").style.display = "none";
+        // Show Snackbar
+        sb("File Uploaded!");
+        // Empty status field
+        H(_("uploadSt"));
+        // Reset upload progress bar
+        _("uploadPB").value = 0;
+        // Clear selected file
+        _("uploadFi").value = null;
+        // List all the files again
+        // TODO: Instead of loading all files again, add file dynamically
+        listFiles();
+    }, false); // doesnt appear to ever get called even upon success
+    ajax.addEventListener("error", () => {
+        sb("Upload Failed!");
+    }, false);
+    ajax.addEventListener("abort", () => {
+        sb("Upload Aborted!")
+    }, false);
     ajax.open("POST", "/");
     ajax.send(formdata);
-}
-function progressHandler(event) {
-    H(_("loaded_n_total"), `Uploaded ${event.loaded} bytes`);
-    var percent = Math.round((event.loaded / event.total) * 100);
-    _("progressBar").value = percent;
-    H(_("status"), `${percent}% uploaded... please wait`);
-    if (percent >= 100)
-        H(_("status"), "Please wait, writing file to filesystem");
-}
-function completeHandler(event) {
-    _("status").innerHTML = "Upload Complete";
-    _("progressBar").value = 0;
-    _("details").innerHTML = G("/listfiles");
-    _("status").innerHTML = "File Uploaded";
-    _("detailsheader").innerHTML = "<h3>Files<h3>";
-    _("uploadModal").style.display = "none";
-}
-function errorHandler(event) {
-    H(_("status"), "Upload Failed");
-}
-function abortHandler(event) {
-    H(_("status"), "Upload Aborted");
 }
 function onload() {
     // Load the modal events
@@ -168,6 +219,12 @@ function onload() {
             const u = i.split(",");
             HA(e, `<tr><td>${u[0]}</td><td><button onclick="config('delete_session=${i}')">Delete</button></td></tr>`);
         }
+
+    // Load the default template for files
+    filesItemTemplate = _("filesTable").innerHTML; // The template for files list
+
+    // List the files in the SPIFFS
+    listFiles();
 }
 function showUploadModal() {
     _("uploadModal").style.display = "block";

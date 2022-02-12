@@ -23,34 +23,36 @@
 String listFiles(bool ishtml = false);
 
 // list all of the files, if ishtml=true, return html rather than simple text
-String listFiles(bool ishtml)
+/**
+ * @brief Lists all the files in the SPIFFS.
+ * 
+ * @param backend If true, the result will be in JSON, otherwise, the result will be in a "readable" format.
+ * @return String The list of files in the SPIFFS.
+ */
+String listFiles(bool backend)
 {
   String returnText = "";
   Serial.println("Listing files stored on SPIFFS");
   File root = SPIFFS.open("/");
   File foundfile = root.openNextFile();
-  if (ishtml)
-  {
-    returnText += "<table><tr><th align='left'>Name</th><th align='left'>Size</th><th></th><th></th></tr>";
-  }
+  if (backend)
+    returnText += "{\"files\":[";
   while (foundfile)
   {
-    if (ishtml)
-    {
-      returnText += "<tr align='left'><td>" + String(foundfile.name()) + "</td><td>" + humanReadableSize(foundfile.size()) + "</td>";
-      returnText += "<td><button onclick=\"downloadDeleteButton(\'" + String(foundfile.name()) + "\', \'download\')\">Download</button>";
-      returnText += "<td><button onclick=\"downloadDeleteButton(\'" + String(foundfile.name()) + "\', \'delete\')\">Delete</button></tr>";
-    }
-    else
-    {
-      returnText += "File: " + String(foundfile.name()) + " Size: " + humanReadableSize(foundfile.size()) + "\n";
-    }
+    String filename = String(foundfile.name());
+    size_t filesize = foundfile.size();
     foundfile = root.openNextFile();
+    if (backend)
+      returnText += "{\"name\":\"" + filename + "\",\"size\":\"" + String(filesize) + "\"}";
+    else
+      returnText += "File: " + filename + " Size: " + humanReadableSize(filesize) + "\n";
+      
+    if (backend && foundfile)
+      returnText += ",";
   }
-  if (ishtml)
-  {
-    returnText += "</table>";
-  }
+  if (backend)
+    returnText = returnText + "]}";
+
   root.close();
   foundfile.close();
   return returnText;
