@@ -7,8 +7,6 @@
 // Comment to disable debug mode
 #define DEBUG_MODE
 
-#define TEMPLATE_PLACEHOLDER "`"
-
 // External libraries
 #include <Arduino.h>
 #include <WiFi.h>
@@ -17,6 +15,7 @@
 #include <DNSServer.h>
 #include <SPIFFS.h>
 #include <Preferences.h>
+#include <AsyncElegantOTA.h>
 
 // Internal utilities files
 #include "hash.h"
@@ -178,6 +177,10 @@ void setup()
   info("Configuring Webserver ...");
   server = new AsyncWebServer(config.webserverporthttp);
   configureWebServer(server, &shouldReboot);
+  infoln("ok");
+
+  info("Starting OTA...");
+  AsyncElegantOTA.begin(server, config.httpuser.c_str(), config.httppassword.c_str());
   infoln("ok");
 
   // startup web server
