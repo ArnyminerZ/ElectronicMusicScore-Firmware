@@ -14,10 +14,13 @@ for file in files_list:
         filedata = rstream.read()
 
     # Replace all the desired strings
-    # This is just required with CPP<17
-    # filedata = filedata.replace('<optional>', '<experimental/optional>')
-    # filedata = filedata.replace('std::optional', 'std::experimental::optional')
     filedata = filedata.replace('mx/api/', '')
+    filedata = filedata.replace('mx/ezxml/', '')
+    filedata = filedata.replace('mx/core/elements/', '')
+    filedata = filedata.replace('mx/core/', '')
+    filedata = filedata.replace('mx/impl/', '')
+    filedata = filedata.replace('mx/utility/', '')
+    filedata = filedata.replace('ezxml/', '')
 
     # Write the changes
     with open(f"{mx_path}/{file}", 'w') as wstream:
