@@ -14,5 +14,6 @@ if not os.path.exists(buildmx_dir):
 if not os.path.exists(mx_dir):
     print("❌ MX not available. Building...")
     subprocess.call(['sh', buildmx_dir])
+    exec(open("./fix-mx-paths.py").read())
 else:
     print("✅ MX is available")
