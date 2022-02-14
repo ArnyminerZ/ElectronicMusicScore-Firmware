@@ -12,6 +12,7 @@
 #include "utils.h"
 #include "filesystem.h"
 #include "hash.h"
+#include "musicxml.h"
 
 // Include webpages data
 #include "webpages.h"
@@ -192,6 +193,25 @@ void configureWebServer(AsyncWebServer *server, boolean *shouldReboot)
             logmessage += " Auth: Success";
             infoln(logmessage);
             request->send(200, "text/plain", listFiles(true));
+        } else {
+            logmessage += " Auth: Failed";
+            infoln(logmessage);
+            request->send_P(200, "text/html", login_html, processor);
+        } });
+
+    server->on("/loadxml", HTTP_GET, [](AsyncWebServerRequest *request)
+               {
+        String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
+        if (checkUserWebAuth(request)) {
+            logmessage += " Auth: Success";
+            infoln(logmessage);
+            if (request->hasParam("path"))
+            {
+                AsyncWebParameter *path = request->getParam("path");
+                loadMusic(path->value());
+                request->send(200, "text/plain", "See log");
+            } else
+                request->send(500, "text/plain", "Path parameter not found.");
         } else {
             logmessage += " Auth: Failed";
             infoln(logmessage);
