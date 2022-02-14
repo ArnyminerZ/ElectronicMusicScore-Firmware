@@ -43,5 +43,26 @@ echo "🏗️ Building..."
 
 echo "✅ Build complete."
 
-echo "🚚 Copying built files..."
-cp -R ../mx/Sourcecode/include/mx/api/ ../../include/mx/
+rm -rf ../../include/mx/
+mkdir ../../include/mx/
+
+echo "🚚 Copying header files..."
+cp -R ../mx/Sourcecode/include/mx/api/* ../../include/mx/
+
+echo "🚚 Copying mx/api files..."
+cp -R ../mx/Sourcecode/private/mx/api/* ../../include/mx/
+
+echo "🚚 Copying mx/ezxml files..."
+cp -R ../mx/Sourcecode/private/mx/ezxml/src/include/ezxml/* ../../include/mx/
+cp -R ../mx/Sourcecode/private/mx/ezxml/src/private/private/* ../../include/mx/
+
+echo "🚚 Copying mx/core files..."
+cp -R ../mx/Sourcecode/private/mx/core/elements/* ../../include/mx/
+cp -R ../mx/Sourcecode/private/mx/core/* ../../include/mx/
+rm -rf ../../include/mx/elements
+
+echo "🚚 Copying mx/impl files..."
+cp -R ../mx/Sourcecode/private/mx/impl/* ../../include/mx/
+
+echo "🚚 Copying mx/utility files..."
+cp -R ../mx/Sourcecode/private/mx/utility/* ../../include/mx/
