@@ -10,8 +10,9 @@ print("📦 Installing dependencies...")
 with open('requirements.txt', 'r') as file:
     lines = file.readlines()
     for line in lines:
-        print(f"  {line}", end='')
+        line = line.replace('\n', '')
+        print(f"  🔁 Installing {line}...", end='')
         install(line)
-        print(" ✅")
+        print(f" ✅")
 
 print("✅ Finished installing dependencies.")
