@@ -1,6 +1,6 @@
 
 // General definitions
-#define FIRMWARE_VERSION "v0.0.1"
+#define FIRMWARE_VERSION "v1.0.0-SNAPSHOT"
 
 #define DEBUG_LEVEL DEBUG_LOG
 
