@@ -19,4 +19,13 @@
 
 #define DNS_PORT 53
 
+// HTTP MIME types
+#define MIME_PLAIN "text/plain"
+#define MIME_HTML "text/html"
+#define MIME_JSON "application/json"
+
+// HTTP result codes, see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
+#define HTTP_OK 200
+#define HTTP_BAD_REQUEST 400
+
 #endif

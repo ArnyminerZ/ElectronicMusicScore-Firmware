@@ -13,12 +13,14 @@
 #include "filesystem.h"
 #include "hash.h"
 #include "musicxml.h"
+#include "config.h"
 
 // Include webpages data
 #include "webpages.h"
 
 // Include constants
 #include "consts_net.h"
+#include "consts_err.h"
 
 /**
  * @brief Send the 404 error page through [request].
@@ -29,7 +31,7 @@ void notFound(AsyncWebServerRequest *request)
 {
     String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
     infoln(logmessage);
-    request->send(404, "text/plain", "Not found");
+    request->send(404, MIME_PLAIN, "Not found");
 }
 
 // parses and processes webpages
@@ -73,6 +75,22 @@ String processor(const String &var)
     }
 
     return result;
+}
+
+/**
+ * @brief Processes placeholders for config requests.
+ *
+ * @param var The variable to be replaced.
+ * @return String The value to be replaced.
+ */
+String configProcessor(const String &var)
+{
+    if (var == "ERR_CONFIG_PARAMS")
+        return String(ERR_CONFIG_PARAMS);
+    else if (var == "ERR_AUTH")
+        return String(ERR_AUTH);
+
+    return String();
 }
 
 /**
@@ -152,7 +170,7 @@ void configureWebServer(AsyncWebServer *server, boolean *shouldReboot)
         [](AsyncWebServerRequest *request)
         {
             // Clears cookies
-            AsyncWebServerResponse *response = request->beginResponse(200, "text/html", logout_html);
+            AsyncWebServerResponse *response = request->beginResponse(200, MIME_HTML, logout_html);
             response->addHeader("Set-Cookie", "SESSIONID=; Max-Age=-1");
             request->send(response);
         });
@@ -164,11 +182,11 @@ void configureWebServer(AsyncWebServer *server, boolean *shouldReboot)
         if (checkUserWebAuth(request)) {
             logmessage += " Auth: Success";
             infoln(logmessage);
-            request->send_P(200, "text/html", index_html, processor);
+            request->send_P(200, MIME_HTML, index_html, processor);
         } else {
             logmessage += " Auth: Failed";
             infoln(logmessage);
-            request->send_P(200, "text/html", login_html, processor);
+            request->send_P(200, MIME_HTML, login_html, processor);
         } });
 
     server->on("/reboot", HTTP_GET, [shouldReboot](AsyncWebServerRequest *request)
@@ -176,14 +194,14 @@ void configureWebServer(AsyncWebServer *server, boolean *shouldReboot)
         String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
 
         if (checkUserWebAuth(request)) {
-            request->send(200, "text/html", reboot_html);
+            request->send(200, MIME_HTML, reboot_html);
             logmessage += " Auth: Success";
             infoln(logmessage);
             *shouldReboot = true;
         } else {
             logmessage += " Auth: Failed";
             infoln(logmessage);
-            request->send_P(200, "text/html", login_html, processor);
+            request->send_P(200, MIME_HTML, login_html, processor);
         } });
 
     server->on("/listfiles", HTTP_GET, [](AsyncWebServerRequest *request)
@@ -192,11 +210,11 @@ void configureWebServer(AsyncWebServer *server, boolean *shouldReboot)
         if (checkUserWebAuth(request)) {
             logmessage += " Auth: Success";
             infoln(logmessage);
-            request->send(200, "text/plain", listFiles(true));
+            request->send(200, MIME_PLAIN, listFiles(true));
         } else {
             logmessage += " Auth: Failed";
             infoln(logmessage);
-            request->send_P(200, "text/html", login_html, processor);
+            request->send_P(200, MIME_HTML, login_html, processor);
         } });
 
     server->on("/loadxml", HTTP_GET, [](AsyncWebServerRequest *request)
@@ -209,13 +227,13 @@ void configureWebServer(AsyncWebServer *server, boolean *shouldReboot)
             {
                 AsyncWebParameter *path = request->getParam("path");
                 loadMusic(path->value());
-                request->send(200, "text/plain", "See log");
+                request->send(200, MIME_PLAIN, "See log");
             } else
-                request->send(500, "text/plain", "Path parameter not found.");
+                request->send(500, MIME_PLAIN, "Path parameter not found.");
         } else {
             logmessage += " Auth: Failed";
             infoln(logmessage);
-            request->send_P(200, "text/html", login_html, processor);
+            request->send_P(200, MIME_HTML, login_html, processor);
         } });
 
     server->on("/file", HTTP_GET, [](AsyncWebServerRequest *request)
@@ -234,7 +252,7 @@ void configureWebServer(AsyncWebServer *server, boolean *shouldReboot)
 
                 if (!SPIFFS.exists(fileName)) {
                     infoln(logmessage + " ERROR: file does not exist");
-                    request->send(400, "text/plain", "ERROR: file does not exist");
+                    request->send(400, MIME_PLAIN, "ERROR: file does not exist");
                 } else {
                     info(logmessage + " file exists");
                     if (strcmp(fileAction, "download") == 0) {
@@ -243,20 +261,68 @@ void configureWebServer(AsyncWebServer *server, boolean *shouldReboot)
                     } else if (strcmp(fileAction, "delete") == 0) {
                         logmessage += " deleted";
                         SPIFFS.remove(fileName);
-                        request->send(200, "text/plain", "Deleted File: " + String(fileName));
+                        request->send(200, MIME_PLAIN, "Deleted File: " + String(fileName));
                     } else {
                         logmessage += " ERROR: invalid action param supplied";
-                        request->send(400, "text/plain", "ERROR: invalid action param supplied");
+                        request->send(400, MIME_PLAIN, "ERROR: invalid action param supplied");
                     }
                     infoln(logmessage);
                 }
             } else {
-                request->send(400, "text/plain", "ERROR: name and action params required");
+                request->send(400, MIME_PLAIN, "ERROR: name and action params required");
             }
         } else {
             logmessage += " Auth: Failed";
             infoln(logmessage);
-            request->send_P(200, "text/html", login_html, processor);
+            request->send_P(200, MIME_HTML, login_html, processor);
+        } });
+
+    // Process configuration updates
+    server->on("/config", HTTP_GET, [](AsyncWebServerRequest *request)
+               {
+        String logmessage = "Client:" + request->client()->remoteIP().toString() + " " + request->url();
+        if (checkUserWebAuth(request)) {
+            logmessage += " Auth: Success";
+            infoln(logmessage);
+
+            bool hasKey = request->hasParam("key");
+            bool hasValue = request->hasParam("value");
+
+            // If both key and value params are provided
+            if (hasKey && hasValue)
+            {
+                // Get key and value parameters
+                AsyncWebParameter *keyParam = request->getParam("key");
+                AsyncWebParameter *valParam = request->getParam("value");
+                
+                // Get values
+                String keyStr = keyParam->value();
+                String valStr = valParam->value();
+
+                // Convert values to c_str
+                const char* key = keyStr.c_str();
+                const char* val = valStr.c_str();
+
+                // Execute request
+                const char* result = configure(std::string(key), std::string(val));
+
+                // Build result
+                std::string buf("{\"result\":\"");
+                buf.append(result);
+                buf.append("\",\"params\":{\"key\":\"");
+                buf.append(key);
+                buf.append("\",\"value\":\"");
+                buf.append(val);
+                buf.append("\"}}");
+
+                // Send the built answer
+                request->send(HTTP_OK, MIME_JSON, buf.c_str());
+            } else
+                request->send_P(HTTP_BAD_REQUEST, MIME_JSON, "{\"error\":\"%ERR_CONFIG_PARAMS%\"}", configProcessor);
+        } else {
+            logmessage += " Auth: Failed";
+            infoln(logmessage);
+            request->send_P(HTTP_OK, MIME_JSON, "{\"error\":\"%ERR_AUTH%\"}", configProcessor);
         } });
 
     // Process a login request
