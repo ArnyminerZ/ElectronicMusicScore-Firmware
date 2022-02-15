@@ -35,19 +35,29 @@ int loadMusic(String path)
     debugln("Reading file...");
 
     // Once the XML is read, parse it
+    debugln("Using MX namespace.");
     using namespace mx::api;
 
     // Create a reference to the singleton which holds documents in memory for us
+    debugln("Getting mgr instance...");
     auto &mgr = DocumentManager::getInstance();
+    debug("Opening ifstream of \"");
+    debug(path);
+    debugln("\"...");
     std::ifstream istr(path.c_str());
 
     // Ask the document manager to parse the xml into memory for us, returns a document ID.
+    debugln("Creating documentId from stream...");
     const auto documentId = mgr.createFromStream(istr);
 
     // Get the structural representation of the score from the document manager
+    debugln("Getting score data...");
     const auto score = mgr.getData(documentId);
 
     // We need to explicitly destroy the document from memory
+    debug("Destroying document \"");
+    debug(String(documentId));
+    debugln("\"...");
     mgr.destroyDocument(documentId);
 
     if (score.parts.size() != 1)
