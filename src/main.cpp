@@ -1,14 +1,4 @@
-
-// General definitions
-#define FIRMWARE_VERSION "v1.0.0-SNAPSHOT"
-
-#define DEBUG_LEVEL DEBUG_LOG
-
-// Comment to disable debug mode
-#define DEBUG_MODE
-
-// Disabled OTA until working with 16MB of flash
-// #define ENABLE_OTA
+#include "consts.h"
 
 // External libraries
 #include <Arduino.h>
@@ -28,7 +18,6 @@
 #include "server.h"
 
 // Constants files
-#include "logger_levels.h"
 #include "pref_consts.h"
 #include "consts_wifi.h"
 #include "consts_net.h"
