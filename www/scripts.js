@@ -113,6 +113,16 @@ function selectTab(i) {
 
     CR(_(a.getAttribute("href").substring(1)), "hide");
 }
+
+/**
+ * Configures the parameter [key] to [value].
+ * @param {String} key The config key to use
+ * @param {String} value The value to pass to the configurer to set config [key].
+ */
+const config = (key, value) => {
+    G(`/config?key=${key}&value=${value}`);
+}
+
 let filesItemTemplate;
 function listFiles() {
     const spinnerElement = _("spinner");
@@ -122,8 +132,7 @@ function listFiles() {
         const fs = JSON.parse(G("/listfiles")).files;
         H(c); // Clear the table container
         for (let f of fs) {
-            // We take substring 1 for removing the initial /
-            const n = f.name.substring(1); // The name of the file
+            const n = f.name; // The name of the file
             const ep = n.lastIndexOf("."); // The position of the last point/extension
             HA(
                 c,
@@ -213,12 +222,15 @@ function onload() {
     const s = _("authSessions").value;
     const r = s.substring(s.indexOf("^") + 1);
     H(e); // Clear the children
-    for (i of r.split(";"))
+    let c = 0;
+    for (i of r.split(";")){
         if (i.length > 0) {
             // First element is session, second creation date
             const u = i.split(",");
-            HA(e, `<tr><td>${u[0]}</td><td><button onclick="config('delete_session=${i}')">Delete</button></td></tr>`);
+            HA(e, `<tr id="ses${i}"><td>${u[0]}</td><td><button type="button" onclick="config('delSession',${c});_('ses${i}').remove();">Delete</button></td></tr>`);
         }
+        c++;
+    }
 
     // Load the default template for files
     filesItemTemplate = _("filesTable").innerHTML; // The template for files list
