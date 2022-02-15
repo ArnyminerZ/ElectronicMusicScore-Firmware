@@ -7,6 +7,9 @@
 // Comment to disable debug mode
 #define DEBUG_MODE
 
+// Disabled OTA until working with 16MB of flash
+// #define ENABLE_OTA
+
 // External libraries
 #include <Arduino.h>
 #include <WiFi.h>
@@ -15,7 +18,9 @@
 #include <DNSServer.h>
 #include <SPIFFS.h>
 #include <Preferences.h>
+#ifdef ENABLE_OTA
 #include <AsyncElegantOTA.h>
+#endif
 
 // Internal utilities files
 #include "hash.h"
@@ -74,6 +79,14 @@ void setup()
   infoln(FIRMWARE_VERSION);
 
   infoln("Booting ...");
+
+  info("Initializing outputs...");
+  pinMode(LED_BUILTIN, OUTPUT);
+  infoln("ok");
+
+  info("Turning on LED_BUILTIN...");
+  digitalWrite(LED_BUILTIN, HIGH);
+  infoln("ok");
 
   info("Initializing preferences...");
   preferences.begin(preferencesName, false);
@@ -180,13 +193,19 @@ void setup()
   configureWebServer(server, &shouldReboot);
   infoln("ok");
 
+#ifdef ENABLE_OTA
   info("Starting OTA...");
   AsyncElegantOTA.begin(server, config.httpuser.c_str(), config.httppassword.c_str());
   infoln("ok");
+#endif
 
   // startup web server
   info("Starting Webserver ...");
   server->begin();
+  infoln("ok");
+
+  info("Turning off LED_BUILTIN...");
+  digitalWrite(LED_BUILTIN, LOW);
   infoln("ok");
 }
 
