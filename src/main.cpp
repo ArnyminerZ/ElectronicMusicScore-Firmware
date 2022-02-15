@@ -20,6 +20,7 @@
 // Internal utilities files
 #include "hash.h"
 #include "filesystem.h"
+#include "server.h"
 
 // Constants files
 #include "logger_levels.h"
